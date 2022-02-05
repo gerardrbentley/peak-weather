@@ -52,7 +52,7 @@ def load_metadata() -> pd.DataFrame:
 
 def get_mtn_anchor(mountain: str) -> str:
     anchor = mountain.lower().replace(" ", "-")
-    return f"[{mountain}](/#{anchor})"
+    return f"[{mountain}](#{anchor})"
 
 
 def main():
