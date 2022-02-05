@@ -1,3 +1,4 @@
+from copy import deepcopy
 import asyncio
 
 import pandas as pd
@@ -20,7 +21,7 @@ st.set_page_config(
 )
 
 
-@st.cache()
+@st.cache(ttl=60*10)
 def load_data(lat_lon_pairs: list) -> list:
     """Function to fetch Open Weather data and cache results
 
@@ -66,7 +67,8 @@ With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
 
     with st.spinner("Fetching Weather Data"):
         lat_lon_pairs = zip(base_mountains.lat, base_mountains.lon)
-        weather_responses = load_data(lat_lon_pairs)
+        cached_responses = load_data(lat_lon_pairs)
+        weather_responses = deepcopy(cached_responses)
 
     first_response = weather_responses[0]
     st.write(
