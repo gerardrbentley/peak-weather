@@ -43,7 +43,8 @@ def main():
     )
     st.header(":umbrella: You can't stop the rain, but you can spot it! :umbrella:")
     with st.expander("Expand for Basic App Information:"):
-        st.markdown("""\
+        st.markdown(
+            """\
 # Peak Weather: New Hampshire's 4,000 Footers
 
 Built to give you a dashboard view of the next few hours' forecast for New Hampshires 48 4,000 ft mountains.
@@ -55,14 +56,13 @@ Powered by [Streamlit](https://docs.streamlit.io/) + [Open Weather API](https://
 Specifically, Streamlit runs the web interactinos and OpenWeather provides the data.
 
 With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
-""")
+"""
+        )
     with st.spinner("Loading Mountain List"):
-        base_mountains = pd.read_csv("../data/mountains.csv")
+        base_mountains = pd.read_csv("mountains.csv")
 
     with st.expander("Expand for Basic Mountain Information: "):
         st.dataframe(base_mountains)
-
-    
 
     with st.spinner("Fetching Weather Data"):
         lat_lon_pairs = zip(base_mountains.lat, base_mountains.lon)
