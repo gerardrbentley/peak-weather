@@ -44,8 +44,15 @@ def load_metadata() -> pd.DataFrame:
 
     Returns:
         pd.DataFrame: df containing information for 48 mountains
-    """    
-    return pd.read_csv("./data/mountains.csv")
+    """
+    df = pd.read_csv("./data/mountains.csv")
+    df = df.sort_values("name")
+    return df
+
+
+def get_mtn_anchor(mountain: str) -> str:
+    anchor = mountain.lower().replace(" ", "-")
+    return f"[{mountain}](/#{anchor})"
 
 
 def main():
@@ -78,15 +85,14 @@ Built with :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Be
 
     with st.spinner("Fetching Weather Data"):
         lat_lon_pairs = zip(base_mountains.lat, base_mountains.lon)
-        # cached_responses = load_data(lat_lon_pairs)
-        cached_responses = json.load(open('one_call_response.json'))
+        cached_responses = load_data(lat_lon_pairs)
         weather_responses = deepcopy(cached_responses)
 
     first_response = weather_responses[0]
-    log.info("Weather Response", first_response)
+    log.info("Weather Response", first_response=first_response)
     if "current" not in first_response:
         st.error(
-            f"""\
+            """\
 ### Oof...
 
 Open Weather API can't be reached for data at the moment.
@@ -95,22 +101,31 @@ Apologies, feel free to check back soon."""
     st.write(
         f"## Time: {fromtimestamp(first_response['current']['dt']).strftime('%I:%M:%S %p, %b %d %Y')}"
     )
+    table = []
+
+    table.append("| Mountains |  |  |")
+    table.append("|---|---|---|")
+    for left, middle, right in zip(
+        base_mountains.name[::3], base_mountains.name[1::3], base_mountains.name[2::3]
+    ):
+        table.append(
+            f"| {get_mtn_anchor(left)} | {get_mtn_anchor(middle)} | {get_mtn_anchor(right)} |"
+        )
+    st.markdown("\n".join(table))
 
     for mountain, response in zip(base_mountains.name, weather_responses):
         st.write("-" * 88)
         st.write(f"#### {mountain}")
-        col1, col2, col3, col4, col5 = st.columns(5)
-
-        col1.write(f"Weather {clean_time(response['current']['dt'])}: ")
+        st.write(f"({response['lat']}, {response['lon']})")
+        st.write(f"Weather {clean_time(response['current']['dt'])}: ")
         current_temperature = round(response["current"]["temp"], 1)
-        col1.metric("Temp (F)", current_temperature, 0.0)
+        st.metric("Temp (F)", current_temperature, 0.0)
         for weather in response["current"]["weather"]:
             weather_item = WeatherItem(**weather)
-            show_weather(weather_item, col1)
+            show_weather(weather_item)
 
         with st.expander("Expand for future forecast:"):
-            future_cols = [col2, col3, col4, col5]
-            for col, entry in zip(future_cols, response["hourly"]):
+            for col, entry in zip(st.columns(5), response["hourly"][1:]):
                 col.write(f"{clean_time(entry['dt'])}")
                 temperature = round(entry["temp"], 1)
                 col.metric(
@@ -122,16 +137,15 @@ Apologies, feel free to check back soon."""
                 current_temperature = temperature
             alerts = response.get("alerts")
             if alerts is not None:
-                with st.expander(f"View Weather Alerts for {mountain}"):
-                    for alert in alerts:
-                        body = (
-                            f"### Alert From {alert['sender_name']}: {alert['event']}",
-                            f"Duration: {fromtimestamp(alert['start'])} - {fromtimestamp(alert['end'])}",
-                            alert["description"],
-                            f"Tags: {'; '.join(alert['tags'])}",
-                        )
+                for alert in alerts:
+                    body = (
+                        f"### Alert From {alert['sender_name']}: {alert['event']}",
+                        f"Duration: {fromtimestamp(alert['start'])} - {fromtimestamp(alert['end'])}",
+                        alert["description"],
+                        f"Tags: {'; '.join(alert['tags'])}",
+                    )
 
-                        st.warning("\n".join(body))
+                    st.warning("\n".join(body))
 
 
 if __name__ == "__main__":
