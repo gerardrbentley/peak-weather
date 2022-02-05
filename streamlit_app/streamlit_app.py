@@ -38,6 +38,16 @@ def load_data(lat_lon_pairs: list) -> list:
     return data
 
 
+@st.cache()
+def load_metadata() -> pd.DataFrame:
+    """Function to read mountain lat, lon, and other metadata and cache results
+
+    Returns:
+        pd.DataFrame: df containing information for 48 mountains
+    """    
+    return pd.read_csv("./data/mountains.csv")
+
+
 def main():
     """Main Streamlit App Entrypoint"""
     st.title(
@@ -49,7 +59,7 @@ def main():
             """\
 # Peak Weather: New Hampshire's 4,000 Footers
 
-Built to give you a dashboard view of the next few hours' forecast for New Hampshires 48 4,000 ft mountains.
+Built to give you a dashboard view of the next few hours' forecast for New Hampshire's 48 4,000 ft mountains.
 Gonna rain on the Kinsmans?
 Is it snowing on Washington?
 Should I hike Owl's Head?
@@ -57,11 +67,11 @@ Should I hike Owl's Head?
 Powered by [Streamlit](https://docs.streamlit.io/) + [Open Weather API](https://openweathermap.org/api).
 Specifically, Streamlit runs the web interactinos and OpenWeather provides the data.
 
-With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
+Built with :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
 """
         )
     with st.spinner("Loading Mountain List"):
-        base_mountains = pd.read_csv("./data/mountains.csv")
+        base_mountains = load_metadata()
 
     with st.expander("Expand for Basic Mountain Information: "):
         st.dataframe(base_mountains)
