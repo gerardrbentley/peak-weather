@@ -96,10 +96,10 @@ With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
                 weather_item = WeatherItem(**weather)
                 show_weather(weather_item, col)
             current_temperature = temperature
-
-        if response["alerts"]:
+        alerts = response.get("alerts")
+        if alerts is not None:
             with st.expander(f"View Weather Alerts for {mountain}"):
-                for alert in response["alerts"]:
+                for alert in alerts:
                     body = (
                         f"### Alert From {alert['sender_name']}: {alert['event']}",
                         f"Duration: {fromtimestamp(alert['start'])} - {fromtimestamp(alert['end'])}",
