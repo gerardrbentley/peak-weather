@@ -59,7 +59,7 @@ With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
 """
         )
     with st.spinner("Loading Mountain List"):
-        base_mountains = pd.read_csv("mountains.csv")
+        base_mountains = pd.read_csv("./data/mountains.csv")
 
     with st.expander("Expand for Basic Mountain Information: "):
         st.dataframe(base_mountains)
