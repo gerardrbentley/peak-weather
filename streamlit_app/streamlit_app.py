@@ -1,5 +1,6 @@
 from copy import deepcopy
 import asyncio
+import json
 
 import pandas as pd
 import streamlit as st
@@ -21,7 +22,7 @@ st.set_page_config(
 )
 
 
-@st.cache(ttl=60*10)
+@st.cache(ttl=60 * 60)
 def load_data(lat_lon_pairs: list) -> list:
     """Function to fetch Open Weather data and cache results
 
@@ -31,9 +32,9 @@ def load_data(lat_lon_pairs: list) -> list:
     Returns:
         list: List of dictionaries which are json responses from open weather
     """
-    log.info(f"Start Load Data")
+    log.info("Start Load Data")
     data = asyncio.run(gather_one_call_weather_data(lat_lon_pairs))
-    log.info(f"Returning Load Data")
+    log.info("Returning Load Data")
     return data
 
 
@@ -67,10 +68,20 @@ With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
 
     with st.spinner("Fetching Weather Data"):
         lat_lon_pairs = zip(base_mountains.lat, base_mountains.lon)
-        cached_responses = load_data(lat_lon_pairs)
+        # cached_responses = load_data(lat_lon_pairs)
+        cached_responses = json.load(open('one_call_response.json'))
         weather_responses = deepcopy(cached_responses)
 
     first_response = weather_responses[0]
+    log.info("Weather Response", first_response)
+    if "current" not in first_response:
+        st.error(
+            f"""\
+### Oof...
+
+Open Weather API can't be reached for data at the moment.
+Apologies, feel free to check back soon."""
+        )
     st.write(
         f"## Time: {fromtimestamp(first_response['current']['dt']).strftime('%I:%M:%S %p, %b %d %Y')}"
     )
@@ -87,29 +98,30 @@ With :heart: from [Gar's Bar](https://tech.gerardbentley.com) by Gerard Bentley
             weather_item = WeatherItem(**weather)
             show_weather(weather_item, col1)
 
-        future_cols = [col2, col3, col4, col5]
-        for col, entry in zip(future_cols, response["hourly"]):
-            col.write(f"{clean_time(entry['dt'])}")
-            temperature = round(entry["temp"], 1)
-            col.metric(
-                "Temp (F)", temperature, round(temperature - current_temperature, 1)
-            )
-            for weather in entry["weather"]:
-                weather_item = WeatherItem(**weather)
-                show_weather(weather_item, col)
-            current_temperature = temperature
-        alerts = response.get("alerts")
-        if alerts is not None:
-            with st.expander(f"View Weather Alerts for {mountain}"):
-                for alert in alerts:
-                    body = (
-                        f"### Alert From {alert['sender_name']}: {alert['event']}",
-                        f"Duration: {fromtimestamp(alert['start'])} - {fromtimestamp(alert['end'])}",
-                        alert["description"],
-                        f"Tags: {'; '.join(alert['tags'])}",
-                    )
+        with st.expander("Expand for future forecast:"):
+            future_cols = [col2, col3, col4, col5]
+            for col, entry in zip(future_cols, response["hourly"]):
+                col.write(f"{clean_time(entry['dt'])}")
+                temperature = round(entry["temp"], 1)
+                col.metric(
+                    "Temp (F)", temperature, round(temperature - current_temperature, 1)
+                )
+                for weather in entry["weather"]:
+                    weather_item = WeatherItem(**weather)
+                    show_weather(weather_item, col)
+                current_temperature = temperature
+            alerts = response.get("alerts")
+            if alerts is not None:
+                with st.expander(f"View Weather Alerts for {mountain}"):
+                    for alert in alerts:
+                        body = (
+                            f"### Alert From {alert['sender_name']}: {alert['event']}",
+                            f"Duration: {fromtimestamp(alert['start'])} - {fromtimestamp(alert['end'])}",
+                            alert["description"],
+                            f"Tags: {'; '.join(alert['tags'])}",
+                        )
 
-                    st.warning("\n".join(body))
+                        st.warning("\n".join(body))
 
 
 if __name__ == "__main__":
